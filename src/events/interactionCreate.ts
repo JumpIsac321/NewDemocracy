@@ -1,0 +1,27 @@
+import { Events, MessageFlags, CommandInteraction } from 'discord.js';
+import { Sequelize } from 'sequelize';
+
+export default {
+	name: Events.InteractionCreate,
+	async execute(interaction: CommandInteraction, sequelize: Sequelize) {
+		if (!interaction.isChatInputCommand()) return;
+
+		const command = interaction.client.commands.get(interaction.commandName);
+
+		if (!command) {
+			console.error(`No command matching ${interaction.commandName} was found.`);
+			return;
+		}
+
+		try {
+			await command.execute(interaction, sequelize);
+		} catch (error) {
+			console.error(error);
+			if (interaction.replied || interaction.deferred) {
+				await interaction.followUp({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
+			} else {
+				await interaction.reply({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
+			}
+		}
+	},
+};
